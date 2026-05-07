@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Послуги та калькулятор &mdash; {{ site_settings.get('site_name', 'FreelanceDesk') }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://unpkg.com/vue@3.4/dist/vue.global.prod.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container section-gap">
+  <h1 class="page-title">Послуги та калькулятор</h1>
+  <p class="page-subtitle">Оберіть послугу, технологію, задайте термін і обсяг — система покаже орієнтовну вартість.</p>
+
+  <div id="calculator-app" v-cloak>
+    <div v-if="loading" class="loading-state">Завантаження...</div>
+    <div v-else-if="error" class="error-state">{{ '{{' }} error {{ '}}' }}</div>
+    <div v-else class="services-layout">
+
+      <div class="services-list-panel">
+        <h2 class="panel-title">Послуги</h2>
+        <ul class="services-list">
+          <li
+            v-for="svc in services"
+            :key="svc.id"
+            class="service-item"
+            :class="{ active: selectedServiceId === svc.id }"
+            @click="selectedServiceId = svc.id"
+          >
+            <div class="service-item-name">{{ '{{' }} svc.name {{ '}}' }}</div>
+            <div class="service-item-price">від {{ '{{' }} formatMoney(svc.base_price) {{ '}}' }} ₴/од.</div>
+          </li>
+        </ul>
+
+        <div v-if="selectedService" class="service-description">
+          <h3>{{ '{{' }} selectedService.name {{ '}}' }}</h3>
+          <p>{{ '{{' }} selectedService.description {{ '}}' }}</p>
+        </div>
+      </div>
+
+      <div class="calculator-panel">
+        <h2 class="panel-title">Калькулятор</h2>
+        <div class="calculator-card">
+          <div class="form-group">
+            <label class="form-label">Послуга</label>
+            <select class="form-control" v-model="selectedServiceId">
+              <option v-for="svc in services" :key="svc.id" :value="svc.id">{{ '{{' }} svc.name {{ '}}' }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Технологія</label>
+            <select class="form-control" v-model="selectedTechId" :disabled="!availableTechnologies.length">
+              <option v-if="!availableTechnologies.length" value="">— немає доступних —</option>
+              <option v-for="t in availableTechnologies" :key="t.id" :value="t.id">
+                {{ '{{' }} t.name {{ '}}' }} (×{{ '{{' }} t.multiplier.toFixed(2) {{ '}}' }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Термін виконання: <strong>{{ '{{' }} deadlineDays {{ '}}' }} дн.</strong>
+            </label>
+            <input type="range" class="range-input" v-model.number="deadlineDays" min="1" max="90" step="1">
+            <div class="range-hints">
+              <span>1 день</span>
+              <span>90 днів</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Обсяг: <strong>{{ '{{' }} volume {{ '}}' }} од.</strong>
+            </label>
+            <input type="range" class="range-input" v-model.number="volume" min="1" max="50" step="1">
+            <div class="range-hints">
+              <span>1</span>
+              <span>50</span>
+            </div>
+          </div>
+
+          <div class="calc-result" v-if="price !== null">
+            <div class="calc-price">{{ '{{' }} formatMoney(price) {{ '}}' }} ₴</div>
+            <div class="calc-label">орієнтовна вартість</div>
+          </div>
+          <div class="calc-result calc-result-empty" v-else>
+            Оберіть послугу та технологію
+          </div>
+
+          <div class="calc-breakdown" v-if="price !== null && selectedService && selectedTechnology">
+            <div class="breakdown-row">
+              <span>Базова ціна:</span>
+              <span>{{ '{{' }} formatMoney(selectedService.base_price) {{ '}}' }} ₴/од.</span>
+            </div>
+            <div class="breakdown-row">
+              <span>Обсяг ×{{ '{{' }} volume {{ '}}' }}:</span>
+              <span>{{ '{{' }} formatMoney(selectedService.base_price * volume) {{ '}}' }} ₴</span>
+            </div>
+            <div class="breakdown-row">
+              <span>Технологія ×{{ '{{' }} selectedTechnology.multiplier.toFixed(2) {{ '}}' }}:</span>
+              <span>{{ '{{' }} formatMoney(selectedService.base_price * volume * selectedTechnology.multiplier) {{ '}}' }} ₴</span>
+            </div>
+            <div class="breakdown-row">
+              <span>Терміновість ×{{ '{{' }} urgency.toFixed(3) {{ '}}' }}:</span>
+              <span>= {{ '{{' }} formatMoney(price) {{ '}}' }} ₴</span>
+            </div>
+          </div>
+
+          <button
+            class="btn btn-primary btn-block"
+            v-if="price !== null"
+            @click="openModal"
+          >
+            Залишити заявку
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" v-if="showModal" @click.self="closeModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Заявка на розробку</h3>
+          <button class="modal-close" @click="closeModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div v-if="submitResult" class="submit-success">
+            <p>{{ '{{' }} submitResult.message {{ '}}' }}</p>
+            <button class="btn btn-secondary" @click="closeModal">Закрити</button>
+          </div>
+          <div v-else>
+            <div class="modal-summary" v-if="selectedService && selectedTechnology">
+              <strong>{{ '{{' }} selectedService.name {{ '}}' }}</strong> /
+              {{ '{{' }} selectedTechnology.name {{ '}}' }} /
+              {{ '{{' }} deadlineDays {{ '}}' }} дн. /
+              {{ '{{' }} volume {{ '}}' }} од. /
+              <strong>{{ '{{' }} formatMoney(price) {{ '}}' }} ₴</strong>
+            </div>
+
+            <div v-if="submitErrors.length" class="submit-errors">
+              <p v-for="err in submitErrors" :key="err">{{ '{{' }} err {{ '}}' }}</p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Ваше ім'я *</label>
+              <input type="text" class="form-control" v-model="form.clientName" placeholder="Іван Петренко" maxlength="128">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Контакт (телефон / Telegram / email) *</label>
+              <input type="text" class="form-control" v-model="form.clientContact" placeholder="@username або +380..." maxlength="255">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Коментар</label>
+              <textarea class="form-control" v-model="form.comment" rows="3" placeholder="Опишіть завдання..." maxlength="4000"></textarea>
+            </div>
+            <button class="btn btn-primary btn-block" @click="submitRequest" :disabled="submitting">
+              {{ '{{' }} submitting ? 'Надсилання...' : 'Надіслати заявку' {{ '}}' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/calculator.js') }}"></script>
+{% endblock %}

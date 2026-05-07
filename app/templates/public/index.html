@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}{{ site_settings.get('site_name', 'FreelanceDesk') }} — Веб-розробка{% endblock %}
+
+{% block extra_head %}
+<script src="https://unpkg.com/vue@3.4/dist/vue.global.prod.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- ===== HERO ===== -->
+<section class="hero" id="hero">
+  <div class="hero-parallax-bg" id="parallax-bg"></div>
+  <div class="hero-grid"></div>
+
+  <span class="hero-float hf-1">const price = calc()</span>
+  <span class="hero-float hf-2">async function build()</span>
+  <span class="hero-float hf-3">return { status: 200 }</span>
+  <span class="hero-float hf-4">git push origin main</span>
+
+  <div class="hero-inner anim-fadein">
+    <div class="hero-badge">ФОП Веб-розробника</div>
+    <h1 class="hero-title">{{ site_settings.get('site_name', 'FreelanceDesk') }}</h1>
+    <p class="hero-slogan">{{ site_settings.get('site_slogan', 'Веб-розробка під ключ') }}</p>
+    <p class="hero-about">{{ site_settings.get('site_about_short', '') }}</p>
+    <div class="hero-actions">
+      <a href="{{ url_for('public.services') }}" class="btn btn-primary btn-large">Послуги та ціни</a>
+      <a href="{{ url_for('public.contact') }}"  class="btn btn-secondary btn-large">Залишити заявку</a>
+    </div>
+  </div>
+
+  <!-- Карусель послуг -->
+  <div id="carousel-app" class="hero-carousel-wrap anim-fadein-delay" v-cloak>
+    <div class="carousel-track">
+      <transition name="carousel-fade" mode="out-in">
+        <div class="carousel-slide" :key="current">
+          <div class="carousel-slide-inner">
+            <div class="carousel-slide-header">
+              <span class="carousel-slide-tag">{{ '{{' }} slides[current].tag {{ '}}' }}</span>
+              <span class="carousel-slide-price">{{ '{{' }} slides[current].price {{ '}}' }}</span>
+            </div>
+            <div class="carousel-slide-title">{{ '{{' }} slides[current].title {{ '}}' }}</div>
+            <p class="carousel-slide-desc">{{ '{{' }} slides[current].desc {{ '}}' }}</p>
+            <div class="carousel-techs">
+              <span class="carousel-tech" v-for="t in slides[current].techs" :key="t">{{ '{{' }} t {{ '}}' }}</span>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
+    <div class="carousel-controls">
+      <button class="carousel-btn" @click="prev" aria-label="Попередній">&larr;</button>
+      <div class="carousel-dots">
+        <button
+          class="carousel-dot"
+          :class="{ active: i === current }"
+          v-for="(_, i) in slides"
+          :key="i"
+          @click="goTo(i)"
+          :aria-label="`Слайд ${i+1}`"
+        ></button>
+      </div>
+      <button class="carousel-btn" @click="next" aria-label="Наступний">&rarr;</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FEATURES ===== -->
+<section class="features section-gap">
+  <div class="container">
+    <h2 class="section-title reveal">Чому обирають мене</h2>
+    <div class="features-grid">
+      <div class="feature-card reveal" style="--delay:.05s">
+        <div class="feature-icon">01</div>
+        <h3>Прозора ціна</h3>
+        <p>Калькулятор показує орієнтовну вартість ще до першого дзвінка. Жодних прихованих платежів.</p>
+      </div>
+      <div class="feature-card reveal" style="--delay:.1s">
+        <div class="feature-icon">02</div>
+        <h3>Без посередників</h3>
+        <p>Ви спілкуєтесь напряму з розробником. Зворотній зв'язок швидший, рішення — оперативніші.</p>
+      </div>
+      <div class="feature-card reveal" style="--delay:.15s">
+        <div class="feature-icon">03</div>
+        <h3>Будь-який стек</h3>
+        <p>Django, Flask, React, Laravel, .NET — обирайте технологію, яка підходить вашому проєкту.</p>
+      </div>
+      <div class="feature-card reveal" style="--delay:.2s">
+        <div class="feature-icon">04</div>
+        <h3>Від лендингу до ентерпрайзу</h3>
+        <p>Односторінкові сайти, корпоративні портали, інтернет-магазини, Telegram-боти, API.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="section-gap">
+  <div class="container">
+    <div class="cta-section reveal">
+      <h2>Готові почати?</h2>
+      <p>Скористайтесь калькулятором — дізнайтесь орієнтовну вартість за 30 секунд.</p>
+      <a href="{{ url_for('public.services') }}" class="btn btn-primary btn-large">Порахувати вартість</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const { createApp } = Vue;
+createApp({
+  data() {
+    return {
+      current: 0,
+      timer: null,
+      slides: [
+        {
+          tag: 'Популярне',
+          title: 'Лендинг',
+          price: 'від 2 500 ₴',
+          desc: 'Односторінковий продаючий сайт з формою захоплення лідів і адаптивним дизайном.',
+          techs: ['Django', 'Flask + Vue', 'React'],
+        },
+        {
+          tag: 'Для бізнесу',
+          title: 'Корпоративний сайт',
+          price: 'від 1 800 ₴/стор.',
+          desc: 'Представницький сайт компанії з кількома розділами, SEO-оптимізацією та CMS.',
+          techs: ['Laravel + Vue', 'React + Node.js', 'Django'],
+        },
+        {
+          tag: 'E-commerce',
+          title: 'Інтернет-магазин',
+          price: 'від 3 500 ₴/модуль',
+          desc: 'Платформа онлайн-продажів з каталогом, кошиком, фільтрами та особистим кабінетом.',
+          techs: ['React + Node.js', 'Laravel + Vue', 'Spring Boot'],
+        },
+        {
+          tag: 'SaaS / MVP',
+          title: 'Веб-застосунок',
+          price: 'від 4 500 ₴/модуль',
+          desc: 'Повноцінний веб-додаток з авторизацією, бізнес-логікою та REST API.',
+          techs: ['Flask + Vue', 'Django', 'Blazor Server (.NET)'],
+        },
+        {
+          tag: 'Автоматизація',
+          title: 'Telegram-бот',
+          price: 'від 2 000 ₴/модуль',
+          desc: 'Автоматизований бот для продажів, підтримки клієнтів або внутрішніх процесів.',
+          techs: ['Flask + Vue', 'Django', 'FastAPI'],
+        },
+      ],
+    };
+  },
+  mounted() {
+    this.startTimer();
+  },
+  beforeUnmount() {
+    clearInterval(this.timer);
+  },
+  methods: {
+    startTimer() {
+      this.timer = setInterval(() => this.next(), 4000);
+    },
+    resetTimer() {
+      clearInterval(this.timer);
+      this.startTimer();
+    },
+    next() {
+      this.current = (this.current + 1) % this.slides.length;
+    },
+    prev() {
+      this.current = (this.current - 1 + this.slides.length) % this.slides.length;
+      this.resetTimer();
+    },
+    goTo(i) {
+      this.current = i;
+      this.resetTimer();
+    },
+  },
+}).mount('#carousel-app');
+</script>
+{% endblock %}

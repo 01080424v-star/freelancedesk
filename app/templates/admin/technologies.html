@@ -1,0 +1,66 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Технології &mdash; {{ site_settings.get('site_name', 'FreelanceDesk') }}{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <h1>Технології</h1>
+  <a href="{{ url_for('admin.technology_new') }}" class="btn btn-primary">+ Нова технологія</a>
+</div>
+
+{% if technologies %}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Назва</th>
+        <th>Множник</th>
+        <th>Опис</th>
+        <th>Статус</th>
+        <th>Дії</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tech in technologies %}
+      <tr class="{{ '' if tech.is_active else 'row-inactive' }}">
+        <td>{{ tech.id }}</td>
+        <td>{{ tech.name }}</td>
+        <td><strong>×{{ tech.multiplier }}</strong></td>
+        <td class="text-muted">{{ tech.description or '—' }}</td>
+        <td>
+          {% if tech.is_active %}
+            <span class="badge badge-new">Активна</span>
+          {% else %}
+            <span class="badge badge-rejected">Деактивована</span>
+          {% endif %}
+        </td>
+        <td class="actions-cell">
+          <a href="{{ url_for('admin.technology_edit', id=tech.id) }}" class="btn btn-sm btn-secondary">Редагувати</a>
+          {% if tech.is_active %}
+          <form method="post" action="{{ url_for('admin.technology_delete', id=tech.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-warning"
+              onclick="return confirm('Деактивувати технологію «{{ tech.name }}»?')">
+              Деактивувати
+            </button>
+          </form>
+          {% else %}
+          <form method="post" action="{{ url_for('admin.technology_destroy', id=tech.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-danger"
+              onclick="return confirm('Видалити остаточно «{{ tech.name }}»?')">
+              Видалити
+            </button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty-state">Технологій ще немає. <a href="{{ url_for('admin.technology_new') }}">Додати першу</a>.</p>
+{% endif %}
+{% endblock %}

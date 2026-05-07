@@ -1,0 +1,66 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Дашборд &mdash; {{ site_settings.get('site_name', 'FreelanceDesk') }}{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <h1>Дашборд</h1>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card stat-card-accent">
+    <div class="stat-value">{{ new_requests }}</div>
+    <div class="stat-label">Нових заявок</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ total_requests }}</div>
+    <div class="stat-label">Всього заявок</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ total_services }}</div>
+    <div class="stat-label">Активних послуг</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ total_technologies }}</div>
+    <div class="stat-label">Технологій</div>
+  </div>
+</div>
+
+<div class="admin-section">
+  <div class="admin-section-header">
+    <h2>Останні заявки</h2>
+    <a href="{{ url_for('admin.requests_list') }}" class="btn btn-sm btn-secondary">Всі заявки</a>
+  </div>
+
+  {% if recent_requests %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Клієнт</th>
+          <th>Послуга</th>
+          <th>Ціна</th>
+          <th>Статус</th>
+          <th>Дата</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in recent_requests %}
+        <tr>
+          <td><a href="{{ url_for('admin.request_view', id=req.id) }}">{{ req.id }}</a></td>
+          <td>{{ req.client_name }}</td>
+          <td>{{ req.service.name }}</td>
+          <td>{{ '{:,.2f}'.format(req.calculated_price) }} ₴</td>
+          <td><span class="badge badge-{{ req.status }}">{{ req.status }}</span></td>
+          <td>{{ req.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state">Заявок ще немає.</p>
+  {% endif %}
+</div>
+{% endblock %}

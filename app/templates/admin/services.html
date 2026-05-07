@@ -1,0 +1,68 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Послуги &mdash; {{ site_settings.get('site_name', 'FreelanceDesk') }}{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <h1>Послуги</h1>
+  <a href="{{ url_for('admin.service_new') }}" class="btn btn-primary">+ Нова послуга</a>
+</div>
+
+{% if services %}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Назва</th>
+        <th>Базова ціна</th>
+        <th>Технологій</th>
+        <th>Статус</th>
+        <th>Дії</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for svc in services %}
+      <tr class="{{ '' if svc.is_active else 'row-inactive' }}">
+        <td>{{ svc.id }}</td>
+        <td>
+          <a href="{{ url_for('admin.service_edit', id=svc.id) }}">{{ svc.name }}</a>
+        </td>
+        <td>{{ '{:,.2f}'.format(svc.base_price) }} ₴</td>
+        <td>{{ svc.technologies | length }}</td>
+        <td>
+          {% if svc.is_active %}
+            <span class="badge badge-new">Активна</span>
+          {% else %}
+            <span class="badge badge-rejected">Деактивована</span>
+          {% endif %}
+        </td>
+        <td class="actions-cell">
+          <a href="{{ url_for('admin.service_edit', id=svc.id) }}" class="btn btn-sm btn-secondary">Редагувати</a>
+          {% if svc.is_active %}
+          <form method="post" action="{{ url_for('admin.service_delete', id=svc.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-warning"
+              onclick="return confirm('Деактивувати послугу «{{ svc.name }}»?')">
+              Деактивувати
+            </button>
+          </form>
+          {% else %}
+          <form method="post" action="{{ url_for('admin.service_destroy', id=svc.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-danger"
+              onclick="return confirm('Видалити остаточно «{{ svc.name }}»? Це незворотньо.')">
+              Видалити
+            </button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty-state">Послуг ще немає. <a href="{{ url_for('admin.service_new') }}">Створити першу</a>.</p>
+{% endif %}
+{% endblock %}

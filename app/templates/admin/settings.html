@@ -1,0 +1,44 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Налаштування &mdash; {{ site_settings.get('site_name', 'FreelanceDesk') }}{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <h1>Налаштування сайту</h1>
+</div>
+
+<div class="form-card">
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label class="form-label" for="site_name">Назва сайту</label>
+      <input type="text" id="site_name" name="site_name" class="form-control"
+        value="{{ settings.get('site_name', '') }}" maxlength="128">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="site_slogan">Слоган</label>
+      <input type="text" id="site_slogan" name="site_slogan" class="form-control"
+        value="{{ settings.get('site_slogan', '') }}" maxlength="255">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="site_address">Адреса / контакти</label>
+      <input type="text" id="site_address" name="site_address" class="form-control"
+        value="{{ settings.get('site_address', '') }}" maxlength="255">
+      <small class="form-hint">Відображається у футері та на сторінці контактів.</small>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="site_about_short">Короткий опис (головна сторінка)</label>
+      <textarea id="site_about_short" name="site_about_short" class="form-control" rows="3"
+        maxlength="500">{{ settings.get('site_about_short', '') }}</textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Зберегти</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Контакти &mdash; {{ site_settings.get('site_name', 'FreelanceDesk') }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://unpkg.com/vue@3.4/dist/vue.global.prod.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container section-gap">
+  <h1 class="page-title">Залишити заявку</h1>
+  <p class="page-subtitle">Опишіть ваш проєкт. Я зв'яжусь з вами протягом доби.</p>
+
+  <div class="contact-layout">
+    <div class="contact-form-wrap" id="contact-app" v-cloak>
+      <div v-if="submitResult" class="submit-success-block">
+        <h3>Заявку прийнято!</h3>
+        <p>{{ '{{' }} submitResult {{ '}}' }}</p>
+        <a href="{{ url_for('public.index') }}" class="btn btn-secondary">На головну</a>
+      </div>
+
+      <form v-else @submit.prevent="submitForm" novalidate>
+        <div v-if="errors.length" class="submit-errors">
+          <p v-for="err in errors" :key="err">{{ '{{' }} err {{ '}}' }}</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ваше ім'я *</label>
+          <input type="text" class="form-control" v-model="form.clientName" placeholder="Іван Петренко" maxlength="128" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Контакт (телефон / Telegram / email) *</label>
+          <input type="text" class="form-control" v-model="form.clientContact" placeholder="@username або +380..." maxlength="255" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Послуга</label>
+          <select class="form-control" v-model="form.serviceId">
+            <option :value="null">— оберіть послугу (необов'язково) —</option>
+            <option v-for="svc in services" :key="svc.id" :value="svc.id">{{ '{{' }} svc.name {{ '}}' }}</option>
+          </select>
+        </div>
+
+        <div class="form-group" v-if="form.serviceId">
+          <label class="form-label">Технологія</label>
+          <select class="form-control" v-model="form.techId">
+            <option :value="null">— оберіть технологію —</option>
+            <option v-for="t in availableTechs" :key="t.id" :value="t.id">{{ '{{' }} t.name {{ '}}' }}</option>
+          </select>
+        </div>
+
+        <div class="form-row" v-if="form.serviceId">
+          <div class="form-group">
+            <label class="form-label">Термін (днів)</label>
+            <input type="number" class="form-control" v-model.number="form.deadlineDays" min="1" max="365" placeholder="14">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Обсяг (одиниць)</label>
+            <input type="number" class="form-control" v-model.number="form.volume" min="1" max="1000" placeholder="1">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Опис завдання</label>
+          <textarea class="form-control" v-model="form.comment" rows="5" placeholder="Опишіть, що потрібно розробити..." maxlength="4000"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
+          {{ '{{' }} submitting ? 'Надсилання...' : 'Надіслати заявку' {{ '}}' }}
+        </button>
+      </form>
+    </div>
+
+    <div class="contact-info">
+      <div class="contact-photo-wrap">
+        <img
+          src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=640&q=82&auto=format&fit=crop"
+          alt="development"
+          class="contact-photo"
+          loading="lazy"
+        >
+      </div>
+      <div class="contact-card">
+        <h3>Як зв'язатись</h3>
+        <p>{{ site_settings.get('site_address', '') }}</p>
+      </div>
+      <div class="contact-card">
+        <h3>Хочете дізнатись ціну заздалегідь?</h3>
+        <p>Скористайтесь інтерактивним калькулятором на сторінці послуг.</p>
+        <a href="{{ url_for('public.services') }}" class="btn btn-secondary" style="display:block;text-align:center;margin-top:.75rem;">
+          Відкрити калькулятор
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const { createApp, ref, computed } = Vue;
+createApp({
+  data() {
+    return {
+      services: [],
+      form: {
+        clientName: '',
+        clientContact: '',
+        serviceId: null,
+        techId: null,
+        deadlineDays: 14,
+        volume: 1,
+        comment: '',
+      },
+      submitting: false,
+      errors: [],
+      submitResult: null,
+    };
+  },
+  computed: {
+    selectedService() {
+      return this.services.find(s => s.id === this.form.serviceId) || null;
+    },
+    availableTechs() {
+      return this.selectedService ? this.selectedService.technologies : [];
+    },
+  },
+  async mounted() {
+    try {
+      const resp = await fetch('/api/services');
+      this.services = await resp.json();
+    } catch (e) {}
+  },
+  methods: {
+    async submitForm() {
+      this.submitting = true;
+      this.errors = [];
+      const payload = {
+        client_name: this.form.clientName,
+        client_contact: this.form.clientContact,
+        service_id: this.form.serviceId || (this.services[0] && this.services[0].id),
+        technology_id: this.form.techId || (this.availableTechs[0] && this.availableTechs[0].id),
+        deadline_days: this.form.deadlineDays || 14,
+        volume: this.form.volume || 1,
+        comment: this.form.comment,
+      };
+      try {
+        const resp = await fetch('/api/requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          this.submitResult = `Заявку №${data.request_id} прийнято. Орієнтовна вартість: ${data.calculated_price.toLocaleString('uk-UA')} ₴. Зв'яжусь з вами найближчим часом.`;
+        } else {
+          this.errors = data.errors || [data.error || 'Помилка сервера'];
+        }
+      } catch (e) {
+        this.errors = ["Помилка з'єднання з сервером"];
+      } finally {
+        this.submitting = false;
+      }
+    },
+  },
+}).mount('#contact-app');
+</script>
+{% endblock %}

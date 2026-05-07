@@ -1,0 +1,80 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Заявки &mdash; {{ site_settings.get('site_name', 'FreelanceDesk') }}{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <h1>Заявки</h1>
+  <div class="filter-group">
+    <a href="{{ url_for('admin.requests_list') }}"
+      class="btn btn-sm {{ 'btn-primary' if not status_filter else 'btn-secondary' }}">Всі</a>
+    <a href="{{ url_for('admin.requests_list', status='new') }}"
+      class="btn btn-sm {{ 'btn-primary' if status_filter == 'new' else 'btn-secondary' }}">Нові</a>
+    <a href="{{ url_for('admin.requests_list', status='in_progress') }}"
+      class="btn btn-sm {{ 'btn-primary' if status_filter == 'in_progress' else 'btn-secondary' }}">В роботі</a>
+    <a href="{{ url_for('admin.requests_list', status='done') }}"
+      class="btn btn-sm {{ 'btn-primary' if status_filter == 'done' else 'btn-secondary' }}">Виконано</a>
+    <a href="{{ url_for('admin.requests_list', status='rejected') }}"
+      class="btn btn-sm {{ 'btn-primary' if status_filter == 'rejected' else 'btn-secondary' }}">Відхилено</a>
+  </div>
+</div>
+
+{% if requests %}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Клієнт</th>
+        <th>Контакт</th>
+        <th>Послуга / Технологія</th>
+        <th>Термін / Обсяг</th>
+        <th>Ціна</th>
+        <th>Статус</th>
+        <th>Дата</th>
+        <th>Дії</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for req in requests %}
+      <tr>
+        <td><a href="{{ url_for('admin.request_view', id=req.id) }}">{{ req.id }}</a></td>
+        <td>{{ req.client_name }}</td>
+        <td class="text-muted">{{ req.client_contact }}</td>
+        <td>
+          <div>{{ req.service.name }}</div>
+          <div class="text-muted text-sm">{{ req.technology.name }}</div>
+        </td>
+        <td>{{ req.deadline_days }} дн. / {{ req.volume }} од.</td>
+        <td><strong>{{ '{:,.0f}'.format(req.calculated_price) }} ₴</strong></td>
+        <td>
+          <select class="status-select badge-select badge-{{ req.status }}"
+            data-id="{{ req.id }}" onchange="updateStatus({{ req.id }}, this.value, this)">
+            <option value="new" {{ 'selected' if req.status == 'new' }}>Нова</option>
+            <option value="in_progress" {{ 'selected' if req.status == 'in_progress' }}>В роботі</option>
+            <option value="done" {{ 'selected' if req.status == 'done' }}>Виконано</option>
+            <option value="rejected" {{ 'selected' if req.status == 'rejected' }}>Відхилено</option>
+          </select>
+        </td>
+        <td class="text-sm text-muted">{{ req.created_at.strftime('%d.%m.%Y') }}</td>
+        <td class="actions-cell">
+          <a href="{{ url_for('admin.request_view', id=req.id) }}" class="btn btn-sm btn-secondary">Деталі</a>
+          <form method="post" action="{{ url_for('admin.request_delete', id=req.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-danger"
+              onclick="return confirm('Видалити заявку №{{ req.id }}?')">
+              Видалити
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty-state">
+  {% if status_filter %}Заявок зі статусом "{{ status_filter }}" немає.{% else %}Заявок ще немає.{% endif %}
+</p>
+{% endif %}
+{% endblock %}

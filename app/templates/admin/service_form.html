@@ -1,0 +1,63 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{% if service %}Редагувати послугу{% else %}Нова послуга{% endif %} &mdash; {{ site_settings.get('site_name', 'FreelanceDesk') }}{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <h1>{% if service %}Редагувати: {{ service.name }}{% else %}Нова послуга{% endif %}</h1>
+  <a href="{{ url_for('admin.services') }}" class="btn btn-secondary">Назад</a>
+</div>
+
+<div class="form-card">
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label class="form-label" for="name">Назва *</label>
+      <input type="text" id="name" name="name" class="form-control"
+        value="{{ service.name if service else '' }}"
+        maxlength="128" required autofocus>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="base_price">Базова ціна (₴ за одиницю) *</label>
+      <input type="number" id="base_price" name="base_price" class="form-control"
+        value="{{ service.base_price if service else '' }}"
+        step="0.01" min="0.01" required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="description">Опис</label>
+      <textarea id="description" name="description" class="form-control" rows="3">{{ service.description if service else '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Доступні технології</label>
+      <div class="checkbox-group">
+        {% for tech in all_technologies %}
+        <label class="checkbox-label">
+          <input type="checkbox" name="technologies" value="{{ tech.id }}"
+            {% if service and tech in service.technologies %}checked{% endif %}>
+          {{ tech.name }} (×{{ tech.multiplier }})
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" name="is_active"
+          {% if service is none or service.is_active %}checked{% endif %}>
+        Активна (відображається на сайті)
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">
+        {% if service %}Зберегти зміни{% else %}Створити послугу{% endif %}
+      </button>
+      <a href="{{ url_for('admin.services') }}" class="btn btn-secondary">Скасувати</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

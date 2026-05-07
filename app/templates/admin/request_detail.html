@@ -1,0 +1,86 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Заявка №{{ req.id }} &mdash; {{ site_settings.get('site_name', 'FreelanceDesk') }}{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <h1>Заявка №{{ req.id }}</h1>
+  <a href="{{ url_for('admin.requests_list') }}" class="btn btn-secondary">Назад до списку</a>
+</div>
+
+<div class="detail-layout">
+  <div class="detail-main">
+    <div class="detail-card">
+      <h3>Клієнт</h3>
+      <dl class="detail-list">
+        <dt>Ім'я</dt>
+        <dd>{{ req.client_name }}</dd>
+        <dt>Контакт</dt>
+        <dd>{{ req.client_contact }}</dd>
+      </dl>
+    </div>
+
+    <div class="detail-card">
+      <h3>Замовлення</h3>
+      <dl class="detail-list">
+        <dt>Послуга</dt>
+        <dd>{{ req.service.name }}</dd>
+        <dt>Технологія</dt>
+        <dd>{{ req.technology.name }} (×{{ req.technology.multiplier }})</dd>
+        <dt>Термін виконання</dt>
+        <dd>{{ req.deadline_days }} днів</dd>
+        <dt>Обсяг</dt>
+        <dd>{{ req.volume }} одиниць</dd>
+        <dt>Розрахована вартість</dt>
+        <dd><strong>{{ '{:,.2f}'.format(req.calculated_price) }} ₴</strong></dd>
+      </dl>
+    </div>
+
+    {% if req.comment %}
+    <div class="detail-card">
+      <h3>Коментар клієнта</h3>
+      <p>{{ req.comment }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="detail-card">
+      <h3>Статус заявки</h3>
+      <p>Поточний: <span class="badge badge-{{ req.status }}">{{ req.status }}</span></p>
+      <form method="post" action="{{ url_for('admin.request_status', id=req.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+          <select name="status" class="form-control">
+            <option value="new" {{ 'selected' if req.status == 'new' }}>Нова</option>
+            <option value="in_progress" {{ 'selected' if req.status == 'in_progress' }}>В роботі</option>
+            <option value="done" {{ 'selected' if req.status == 'done' }}>Виконано</option>
+            <option value="rejected" {{ 'selected' if req.status == 'rejected' }}>Відхилено</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Змінити статус</button>
+      </form>
+    </div>
+
+    <div class="detail-card">
+      <h3>Метадані</h3>
+      <dl class="detail-list">
+        <dt>ID</dt>
+        <dd>{{ req.id }}</dd>
+        <dt>Дата подачі</dt>
+        <dd>{{ req.created_at.strftime('%d.%m.%Y %H:%M') }}</dd>
+      </dl>
+    </div>
+
+    <div class="detail-card">
+      <form method="post" action="{{ url_for('admin.request_delete', id=req.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger btn-block"
+          onclick="return confirm('Видалити заявку №{{ req.id }} остаточно?')">
+          Видалити заявку
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
